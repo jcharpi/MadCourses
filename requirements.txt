@@ -1,0 +1,9 @@
+# Core libs ───────────────────────────────────────────
+sentence-transformers==4.1.0     # released Apr 15 2025:contentReference[oaicite:0]{index=0}
+numpy>=2.2.0,<3.0                # NumPy 2.2.6 is the latest May 17 2025 build:contentReference[oaicite:1]{index=1}
+
+# sentence‑transformers pulls these automatically, but pinning
+# helps reproducibility on fresh machines:
+torch>=2.2.0                     # PyTorch wheel selected automatically (CPU/GPU)
+transformers>=4.34.0             # HF Transformers API version the ST docs recommend:contentReference[oaicite:2]{index=2}
+scipy>=1.11.0                    # required by sentence‑transformers for evaluation
