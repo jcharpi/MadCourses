@@ -1,13 +1,16 @@
 <script lang="ts">
-  /* ------------------------------------------------------------
-     🎓 MadCourses – UW-Madison skill → course matcher (Svelte)
-     Palette: UW red (#C5050C) primary, black text, pale backgrounds,
-              subtle yellow accent (amber-400)
-     ------------------------------------------------------------ */
+  /* ===================================================================
+     MADCOURSES - UW-Madison Skill-to-Course Matching System (Svelte)
+     Design Palette:
+       Primary: UW Red (#C5050C)
+       Text: Black
+       Backgrounds: Pale neutrals
+       Accent: Subtle yellow (amber-400)
+     =================================================================== */
 
   import { writable, derived, get } from "svelte/store";
 
-  // —— Types ————————————————————————————————
+  // ===== TYPE DEFINITIONS =====
   interface Course {
     id: number;
     subject: string;
@@ -18,12 +21,12 @@
     last_taught: string;
   }
 
-  // —— Reactive State —————————————————————————————
-  // List of skills to search for
+  // ===== REACTIVE STATE =====
+  // Skill management
   const skills = writable<string[]>([]);
   const newSkill = writable("");
 
-  // Filter controls (all start empty)
+  // Search filters (initialized as empty)
   const filters = writable({
     subject: "",
     levelMin: "",
@@ -34,16 +37,15 @@
     k: "5"
   });
 
-  // Reactive guard: whenever creditMin changes to a non‐empty number,
-  // ensure creditMax ≥ creditMin.
+  // Reactive credit validation
   $: {
     const minVal = Number($filters.creditMin);
     if (
-      minVal > 0 &&                    // only run when creditMin is a positive number
-      $filters.creditMax !== "" &&     // and creditMax is not empty
+      minVal > 0 &&                    // Only validate when min is positive
+      $filters.creditMax !== "" &&     // Max must not be empty
       Number($filters.creditMax) < minVal
     ) {
-      // bump creditMax up to match creditMin
+      // Ensure creditMax >= creditMin
       filters.update(f => ({
         ...f,
         creditMax: f.creditMin
@@ -51,7 +53,7 @@
     }
   }
 
-  // Add this function to reset all filters back to empty strings:
+  // Filter reset functionality
   function resetFilters() {
     filters.set({
       subject: "",
@@ -65,13 +67,13 @@
     search()
   }
   
-  // Which skill tab is currently active
+  // Active skill selection
   const activeSkill = writable<string>("");
 
-  // Raw API results: array of { skill, matches: Course[] }
+  // API results storage
   const results = writable<Array<{ skill: string; matches: Course[] }>>([]);
 
-  // Derived: the Course[] for whichever skill is active
+  // Derived active skill courses
   const coursesForActiveSkill = derived(
     [results, activeSkill],
     ([$results, $activeSkill]) => {
@@ -80,10 +82,10 @@
     }
   );
 
-  // —— Handlers ————————————————————————————————
-
+  // ===== EVENT HANDLERS =====
+  // Skill management
   function addSkill() {
-    // Trim any whitespace, then if nonempty and not already present, add
+    // Add new skill after validation
     newSkill.update((s) => s.trim());
     const value = get(newSkill);
     if (value && !get(skills).includes(value)) {
@@ -94,20 +96,18 @@
   }
 
   function removeSkill(skill: string) {
+    // Remove skill and update active selection
     skills.update((arr) => arr.filter((s) => s !== skill));
-    // If the removed skill was active, pick the first remaining skill
     if (get(activeSkill) === skill && get(skills).length) {
       activeSkill.set(get(skills)[0]);
     }
   }
 
+  // Search execution
   async function search() {
-    // Build payload, turning empty strings into undefined so the server can ignore them
+    // Prepare API payload
     const currentSkills = get(skills).filter((s) => s.trim());
-    if (currentSkills.length === 0) {
-      // Nothing to search
-      return;
-    }
+    if (currentSkills.length === 0) return;
 
     const f = get(filters);
     const payload: Record<string, unknown> = {
@@ -115,6 +115,7 @@
       k: parseInt(f.k) || 5
     };
 
+    // Apply active filters
     if (f.subject) payload.subject_contains = f.subject;
     if (f.levelMin) payload.level_min = parseInt(f.levelMin);
     if (f.levelMax) payload.level_max = parseInt(f.levelMax) + 99;
@@ -123,6 +124,7 @@
     if (f.lastTaught) payload.last_taught = f.lastTaught;
 
     try {
+      // Execute API request
       const res = await fetch("/api/match", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -134,25 +136,21 @@
         return;
       }
 
+      // Process results
       const json = await res.json();
-      // json.results is expected as Array<{ skill: string; matches: Course[] }>
       results.set(json.results);
 
-      // If no activeSkill or activeSkill was removed, set to first skill
+      // Update active skill if needed
       if (!get(activeSkill) && currentSkills.length) {
         activeSkill.set(currentSkills[0]);
       }
     } catch (err) {
       console.error("Fetch failed:", err);
     }
-
-    if (f.lastTaught) {
-    const semester = f.lastTaught;
-    const year = semester.substring(1);
-}
   }
 </script>
 
+<!-- ===== GLOBAL STYLES ===== -->
 <style>
   ::selection {
     background: #c5050c; /* UW red */
@@ -160,18 +158,18 @@
   }
 </style>
 
-<!-- —— HEADER ———————————————————————————————— -->
+<!-- ===== HEADER SECTION ===== -->
 <header class="w-full bg-red-700 text-white px-6 py-4 shadow-md flex items-center select-none">
   <h1 class="text-2xl font-semibold tracking-wide">MadCourses</h1>
 </header>
 
-<!-- —— MAIN GRID —————————————————————————————— -->
+<!-- ===== MAIN LAYOUT ===== -->
 <main class="grid gap-6 p-6 bg-white text-black min-h-screen xl:grid-cols-12 xl:divide-x xl:divide-gray-200">
   <!-- Skills Column -->
   <section class="col-span-12 xl:col-span-3 flex flex-col gap-6">
     <h2 class="text-lg font-medium">Skills</h2>
 
-    <!-- Add skill input -->
+    <!-- Skill input -->
     <div class="flex gap-2 items-end">
       <div class="flex-1">
         <label for="skill-input" class="sr-only">Add skill</label>
@@ -211,8 +209,8 @@
   <!-- Filters Column -->
   <section class="col-span-12 xl:col-span-3 flex flex-col gap-6 px-0 xl:px-6">
     <div class="flex items-center justify-between mb-4">
-    <h2 class="text-xl font-semibold">Filters</h2>
-    <!-- Reset button goes here: -->
+      <h2 class="text-xl font-semibold">Filters</h2>
+      <!-- Filter reset -->
       <button
         on:click={resetFilters}
         class="text-sm px-3 py-1 bg-red-100 text-red-800 rounded hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-400"
@@ -222,7 +220,7 @@
     </div>
 
     <div class="space-y-4">
-      <!-- Subject contains -->
+      <!-- Subject filter -->
       <div class="flex flex-col gap-1">
         <label for="subject" class="font-medium">Subject contains</label>
         <input
@@ -234,7 +232,7 @@
         />
       </div>
 
-      <!-- Level range selectors -->
+      <!-- Level filters -->
       <div class="grid grid-cols-2 gap-4">
         <div class="flex flex-col gap-1">
           <label for="levelMin" class="font-medium">Level min</label>
@@ -264,7 +262,7 @@
         </div>
       </div>
 
-      <!-- Credit range -->
+      <!-- Credit filters -->
       <div class="grid grid-cols-2 gap-4">
         <div class="flex flex-col gap-1">
           <label for="creditMin" class="font-medium">Credits min</label>
@@ -292,7 +290,7 @@
         </div>
       </div>
 
-      <!-- Last taught -->
+      <!-- Semester filter -->
       <div class="flex flex-col gap-1">
         <label for="lastTaught" class="font-medium">Last taught</label>
         <select
@@ -307,6 +305,7 @@
         </select>
       </div>
 
+      <!-- Results count -->
       <div class="flex flex-col gap-1">
         <label for="k" class="font-medium">Number of matches per skill (1-10)</label>
         <input
@@ -319,7 +318,8 @@
           class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600"
         />
       </div>
-      <!-- Search button -->
+      
+      <!-- Search trigger -->
       <button
         class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-3 rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-red-600 mt-4"
         on:click={search}
@@ -357,6 +357,8 @@
           </p>
         </li>
       {/each}
+      
+      <!-- Empty states -->
       {#if $coursesForActiveSkill.length === 0}
         {#if get(results).length === 0}
           <li class="text-center text-gray-500 py-4">Hit the search button to find courses!</li>

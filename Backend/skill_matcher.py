@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-skill_matcher.py – Query UW‑Madison courses by semantic similarity.
-
-This version pushes *all* filtering into the Postgres function
-`match_courses` (updated with extra parameters) and calls it via
-Supabase RPC.  Compatible with supabase‑py v2.
+SKILL_MATCHER.PY - UW-Madison Course Similarity Query Tool
+──────────────────────────────────────────────────────────
+• Implements semantic similarity search for UW-Madison courses
+• Pushes all filtering into Postgres function `match_courses`
+• Uses Supabase RPC for database interactions (supabase-py v2)
 """
 
 from __future__ import annotations
@@ -17,23 +17,22 @@ from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 from supabase import Client, create_client
 
-# ─── ENV & CONSTANTS ────────────────────────────────────────────────────
+# ===== ENVIRONMENT SETUP =====
 load_dotenv()
 SUPABASE_URL: str = os.environ["SUPABASE_URL"]
 SUPABASE_KEY: str = os.environ["SUPABASE_ANON_PUBLIC_KEY"]
 TOP_K_SQL_DEFAULT: int = int(os.getenv("TOP_K", 5))
 
-# ─── GLOBALS ────────────────────────────────────────────────────────────
+# ===== GLOBAL INITIALIZATION =====
 sb: Client = create_client(SUPABASE_URL, SUPABASE_KEY)  # supabase‑py v2
 model: SentenceTransformer = SentenceTransformer("all-mpnet-base-v2")
 
-# ─── EMBEDDING ──────────────────────────────────────────────────────────
+# ===== EMBEDDING OPERATIONS =====
 def get_skill_embeddings(skills: List[str]) -> List[list[float]]:
-    """Return 768‑float, unit‑norm vectors for each skill string."""
-    print(model.encode(skills, normalize_embeddings=True).tolist())
+    """Generate 768‑float unit‑norm vectors for input skill strings"""
     return model.encode(skills, normalize_embeddings=True).tolist()
 
-# ─── RPC CALL ───────────────────────────────────────────────────────────
+# ===== DATABASE INTERACTION =====
 def match_courses_rpc(
     vector: list[float],
     *,
@@ -45,7 +44,7 @@ def match_courses_rpc(
     credit_max: Optional[float] = None,
     last_taught_ge: Optional[str] = None,
 ) -> list[dict]:
-    """Invoke the `match_courses` SQL function via Supabase RPC."""
+    """Execute `match_courses` SQL function via Supabase RPC"""
     payload = {
         "skill": vector,
         "k": k,
@@ -69,8 +68,9 @@ def match_courses_rpc(
         raise RuntimeError(f"Supabase RPC failed: {exc}") from exc
     return resp.data or []
 
-# ─── CLI PARSING ────────────────────────────────────────────────────────
+# ===== COMMAND LINE INTERFACE =====
 def parse_args() -> argparse.Namespace:
+    """Configure and parse command-line arguments"""
     p = argparse.ArgumentParser(
         description="Return the courses most similar to each SKILL phrase."
     )
@@ -89,8 +89,9 @@ def parse_args() -> argparse.Namespace:
     )
     return p.parse_args()
 
-# ─── MAIN ───────────────────────────────────────────────────────────────
+# ===== EXECUTION ENTRY POINT =====
 def main() -> None:
+    """Main application workflow"""
     args = parse_args()
     vectors = get_skill_embeddings(args.skills)
 
