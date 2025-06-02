@@ -15,7 +15,7 @@ from typing import List, Optional
 
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
-from supabase import Client, create_client
+from supabase import Client, create_client # type: ignore
 
 # ===== ENVIRONMENT SETUP =====
 load_dotenv()
@@ -25,11 +25,11 @@ TOP_K_SQL_DEFAULT: int = int(os.getenv("TOP_K", 5))
 
 # ===== GLOBAL INITIALIZATION =====
 sb: Client = create_client(SUPABASE_URL, SUPABASE_KEY)  # supabase‑py v2
-model: SentenceTransformer = SentenceTransformer("all-mpnet-base-v2")
+model: SentenceTransformer = SentenceTransformer(os.environ["MODEL"])
 
 # ===== EMBEDDING OPERATIONS =====
 def get_skill_embeddings(skills: List[str]) -> List[list[float]]:
-    """Generate 768‑float unit‑norm vectors for input skill strings"""
+    """Generate 384 unit‑norm vectors for input skill strings"""
     return model.encode(skills, normalize_embeddings=True).tolist()
 
 # ===== DATABASE INTERACTION =====

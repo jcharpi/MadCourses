@@ -2,7 +2,7 @@
 
 Automatically rank university courses against a set of skill phrases using sentence embeddings.
 
-The script **`skill_course_aggregator.py`** turns a plain‑text CSV of course titles & descriptions into recommendations that best match your chosen skills. It downloads the `all‑mpnet‑base‑v2` embedding model on first run and caches course vectors, so subsequent runs are instant.
+The script **`skill_course_aggregator.py`** turns a plain‑text CSV of course titles & descriptions into recommendations that best match your chosen skills. It downloads the `all-MiniLM-L12-v2` embedding model on first run and caches course vectors, so subsequent runs are instant.
 
 ---
 
@@ -83,7 +83,7 @@ Open **`skill_course_aggregator.py`** and tweak the block near the top:
 CSV_PATH   = Path("./courses.csv")
 SKILLS     = ["Build dashboards …", "Implement real‑time …", …]
 TOP_K      = 5
-MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
+MODEL_NAME = "sentence-transformers/all-MiniLM-L12-v2"
 ```
 
 * **Changing the CSV path** automatically creates/uses a matching `.npy` cache.
