@@ -13,6 +13,11 @@ import argparse
 import os
 from typing import List, Optional
 
+os.environ["HF_HOME"]          = "/data"
+os.environ["TRANSFORMERS_CACHE"] = "/data"
+os.environ["HF_DATASETS_CACHE"]  = "/data"
+os.environ["TORCH_HOME"]         = "/data"
+
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 from supabase import Client, create_client # type: ignore
