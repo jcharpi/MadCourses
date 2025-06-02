@@ -1,13 +1,9 @@
 # ─── Core ML & Embedding libs ─────────────────────────
 sentence-transformers==4.1.0     # released Apr 15 2025
-numpy>=2.2.0,<3.0                # NumPy 2.2.6 (May 17 2025)
-torch>=2.2.0                     # CPU/GPU wheels picked automatically
 transformers>=4.34.0             # HF Transformers
-scipy>=1.11.0                    # evaluation utilities
 
 # ─── Supabase client & vector support ─────────────────
 supabase>=2.4,<3.0               # official v2 client (create_client, Client)
-pgvector>=0.1,<1.0               # pure-Python pgvector binding (works on Windows)
 python-dotenv>=1.0               # loads .env at startup
 
 # ─── FastAPI server stack ─────────────────────────────
