@@ -13,10 +13,13 @@ import argparse
 import os
 from typing import List, Optional
 
-os.environ["HF_HOME"]          = "/data"
-os.environ["TRANSFORMERS_CACHE"] = "/data"
-os.environ["HF_DATASETS_CACHE"]  = "/data"
-os.environ["TORCH_HOME"]         = "/data"
+CACHE_DIR = "/tmp/cache"
+os.makedirs(CACHE_DIR, exist_ok=True)
+
+os.environ["HF_HOME"]            = CACHE_DIR
+os.environ["TRANSFORMERS_CACHE"] = CACHE_DIR
+os.environ["HF_DATASETS_CACHE"]  = CACHE_DIR
+os.environ["TORCH_HOME"]         = CACHE_DIR
 
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
