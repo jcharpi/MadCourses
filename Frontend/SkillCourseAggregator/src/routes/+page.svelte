@@ -159,9 +159,42 @@
 </style>
 
 <!-- ===== HEADER SECTION ===== -->
-<header class="w-full bg-red-700 text-white px-6 py-4 shadow-md flex items-center select-none">
+<header class="w-full bg-red-700 text-white px-6 py-4 shadow-md flex items-center justify-between select-none">
+  <!-- App title -->
   <h1 class="text-2xl font-semibold tracking-wide">MadCourses</h1>
+
+  <!-- About + tooltip -->
+  <div class="relative group ml-4">
+    <!-- About trigger -->
+    <span class="cursor-pointer decoration-white/70 decoration-2">
+      About
+    </span>
+
+    <!-- Tooltip -->
+    <div
+      class="absolute right-0 mt-2 w-60 rounded-lg bg-white text-black text-sm p-4 shadow-lg border
+                 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20"
+      role="tooltip"
+    >
+      <p>
+        <strong>MadCourses</strong> is a personal project of mine that matches job skills with UW‑Madison
+        courses. Enter skills, tweak the filters, then press <em>Search</em> to
+        see which classes align best with what you hope to learn.
+      </p>
+      <br/>
+      <p>Developed by <strong> 
+        <a
+          href="https://www.linkedin.com/in/josh-charpentier-79b1b9253/"
+          target="_blank"
+          class="font-semibold hover:text-red-700"
+        >
+          Josh Charpentier
+        </a>
+      </strong></p>
+    </div>
+  </div>
 </header>
+
 
 <!-- ===== MAIN LAYOUT ===== -->
 <main class="grid gap-6 p-6 bg-white text-black min-h-screen xl:grid-cols-12 xl:divide-x xl:divide-gray-200">
