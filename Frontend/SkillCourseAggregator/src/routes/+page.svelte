@@ -34,7 +34,7 @@
     creditMin: "",
     creditMax: "",
     lastTaught: "",
-    k: "5"
+    k: "3"
   });
 
   // Reactive credit validation
@@ -62,7 +62,7 @@
       creditMin: "",
       creditMax: "",
       lastTaught: "",
-      k: "5"
+      k: "3"
     });
     search()
   }
@@ -112,7 +112,7 @@
     const f = get(filters);
     const payload: Record<string, unknown> = {
       skills: currentSkills,
-      k: parseInt(f.k) || 5
+      k: parseInt(f.k) || 3
     };
 
     // Apply active filters
@@ -314,7 +314,7 @@
           type="number"
           min="1"
           max="10"
-          placeholder="5"
+          placeholder="3"
           bind:value={$filters.k}
           class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600"
         />
