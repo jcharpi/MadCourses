@@ -167,7 +167,7 @@
 <main class="grid gap-6 p-6 bg-white text-black min-h-screen xl:grid-cols-12 xl:divide-x xl:divide-gray-200">
   <!-- Skills Column -->
   <section class="col-span-12 xl:col-span-3 flex flex-col gap-6">
-    <h2 class="text-lg font-medium">Skills</h2>
+    <h2 class="text-xl font-semibold">Skills</h2>
 
     <!-- Skill input -->
     <div class="flex gap-2 items-end">
@@ -210,6 +210,7 @@
   <section class="col-span-12 xl:col-span-3 flex flex-col gap-6 px-0 xl:px-6">
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-xl font-semibold">Filters</h2>
+      
       <!-- Filter reset -->
       <button
         on:click={resetFilters}
@@ -329,7 +330,7 @@
 
   <!-- Results Column -->
   <section class="col-span-12 xl:col-span-6 flex flex-col gap-6 px-0 xl:px-6">
-    <h2 class="text-lg font-medium flex items-center gap-2">
+    <h2 class="text-xl font-semibold flex items-center gap-2">
       Results
       <span class="text-sm text-gray-500">(top matches for each skill)</span>
     </h2>
