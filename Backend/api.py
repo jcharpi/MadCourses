@@ -1,26 +1,43 @@
 #!/usr/bin/env python3
 """
-API.PY - FastAPI Wrapper for Skill-to-Course Matching
-─────────────────────────────────────────────────────
-• Provides REST endpoint for course similarity search
-• Leverages functionality from skill_matcher.py
-• Returns structured JSON for frontend consumption
+MadCourses API - FastAPI server for course similarity search
 
-Local Execution:
-    pip install fastapi uvicorn[standard] pydantic
-    uvicorn api:app --host 0.0.0.0 --port 8000 --reload
+This API provides semantic search capabilities for UW-Madison courses using:
+- SQLite database with pre-computed embeddings
+- In-memory vector similarity search
+- Advanced filtering (subject, level, credits, semester)
+- Proper credit range handling (e.g., "1-6" credits matches both 1 and 6 credit searches)
+
+Architecture:
+    Frontend (SvelteKit) → API Server (FastAPI) → SQLite Database
+    
+Endpoints:
+    GET  /health - Health check
+    GET  /docs   - API documentation  
+    POST /match  - Course similarity search
+
+Local Development:
+    python start_backend.py
+    # Server runs on http://localhost:8001
 """
 
 from __future__ import annotations
 from typing import List, Optional
 
-from fastapi import FastAPI, HTTPException # type: ignore
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, validator
 
-# ===== INTEGRATION WITH MATCHING LOGIC =====
-from skill_matcher import get_skill_embeddings, match_courses_rpc
+# Import our custom search engine
+from skill_matcher_sqlite import get_skill_embeddings, match_courses
 
-app = FastAPI(title="Skill‑to‑Course matcher", version="1.0")
+# Initialize FastAPI application
+app = FastAPI(
+    title="MadCourses API",
+    version="2.0", 
+    description="UW-Madison Course Similarity Search with SQLite",
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
 
 # ===== REQUEST/RESPONSE SCHEMAS =====
 class Query(BaseModel):
@@ -61,33 +78,93 @@ class ResponseModel(BaseModel):
     """Top-level API response structure"""
     results: List[SkillMatchBlock]
 
-# ===== API ENDPOINT =====
+# ===== API ENDPOINTS =====
+
+@app.get("/health")
+def health_check():
+    """
+    Health check endpoint for monitoring and load balancers.
+    
+    Returns:
+        dict: Simple status message indicating the API is running
+    """
+    return {"status": "healthy", "message": "MadCourses API is running"}
+
+
+@app.get("/")
+def root():
+    """
+    Root endpoint that provides API information and navigation links.
+    
+    Returns:
+        dict: API info with links to documentation and health check
+    """
+    return {
+        "message": "MadCourses API", 
+        "docs": "/docs", 
+        "health": "/health",
+        "version": "2.0"
+    }
+
+
 @app.post("/match", response_model=ResponseModel)
 def match(payload: Query):
     """
-    Endpoint Workflow:
-    1. Convert skills → embedding vectors
-    2. Query database with filters
-    3. Format results for frontend
+    Find courses similar to the provided skills using semantic search.
+    
+    This endpoint performs vector similarity search against pre-computed course
+    embeddings. It supports advanced filtering by subject, level, credits, and
+    semester. Credit filtering properly handles course credit ranges (e.g., a 
+    course offering "1-6" credits will match searches for 1, 3, or 6 credits).
+    
+    Process:
+    1. Convert input skills to embedding vectors using SentenceTransformer
+    2. Perform similarity search against stored course embeddings  
+    3. Apply filters (subject, level, credits, semester)
+    4. Return top-k matches per skill ranked by cosine similarity
+    
+    Args:
+        payload (Query): Search parameters including skills and filters
+        
+    Returns:
+        ResponseModel: Results containing matching courses for each skill
+        
+    Raises:
+        HTTPException: 500 if embedding generation or search fails
     """
+    # Step 1: Generate embeddings for all input skills
     try:
-        vectors = get_skill_embeddings(payload.skills)  # List[np.ndarray]
-    except RuntimeError as e:  # Handle embedding failures
-        raise HTTPException(status_code=500, detail=str(e))
-
-    results: list[SkillMatchBlock] = []
-
-    for skill, vec in zip(payload.skills, vectors, strict=True):
-        rows = match_courses_rpc(
-            vec,
-            k=payload.k,
-            subject_contains=payload.subject_contains,
-            level_min=payload.level_min,
-            level_max=payload.level_max,
-            credit_min=payload.credit_min,
-            credit_max=payload.credit_max,
-            last_taught_ge=payload.last_taught,
+        vectors = get_skill_embeddings(payload.skills)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to generate embeddings: {str(e)}"
         )
-        results.append(SkillMatchBlock(skill=skill, matches=rows))
+
+    # Step 2: Search for matches for each skill
+    results: List[SkillMatchBlock] = []
+    
+    for skill, vector in zip(payload.skills, vectors, strict=True):
+        try:
+            # Perform similarity search with filtering
+            matches = match_courses(
+                vector.tolist(),
+                k=payload.k,
+                subject_contains=payload.subject_contains,
+                level_min=payload.level_min,
+                level_max=payload.level_max,
+                credit_min=payload.credit_min,
+                credit_max=payload.credit_max,
+                last_taught_ge=payload.last_taught,
+            )
+            
+            # Add results for this skill
+            results.append(SkillMatchBlock(skill=skill, matches=matches))
+            
+        except Exception as e:
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Search failed for skill '{skill}': {str(e)}"
+            )
 
     return ResponseModel(results=results)
