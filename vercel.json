@@ -1,7 +1,7 @@
 {
 	"functions": {
 		"api/match.py": {
-			"runtime": "python3.10",
+			"runtime": "python@3.10",
 			"maxDuration": 30
 		}
 	},
