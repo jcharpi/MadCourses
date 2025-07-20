@@ -9,7 +9,7 @@
 	import css from 'highlight.js/lib/languages/css';
 	import javascript from 'highlight.js/lib/languages/javascript';
 	import typescript from 'highlight.js/lib/languages/typescript';
-	import { AppBar, AppShell } from "@skeletonlabs/skeleton";
+	import { AppBar, AppShell } from '@skeletonlabs/skeleton';
 
 	hljs.registerLanguage('xml', xml); // for HTML
 	hljs.registerLanguage('css', css);
