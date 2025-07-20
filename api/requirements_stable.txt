@@ -1,0 +1,48 @@
+# ================================================================
+# MadCourses - Stability-Focused Requirements (Pinned Versions)
+# ================================================================
+#
+# This file pins exact versions for long-term stability.
+# Only update when necessary for security patches or database updates.
+#
+# Last updated: 2025-01-20
+# Compatible with: Python 3.10+
+# ================================================================
+
+# ─── Core ML & Embedding Libraries ─────────────────────────
+sentence-transformers==2.7.0       # Core embeddings - stable, widely used
+transformers==4.53.2               # HuggingFace transformers - compatible with sentence-transformers
+huggingface-hub==0.33.4            # Model downloading - compatible
+torch==2.7.1                       # PyTorch backend - required by sentence-transformers
+numpy==2.2.6                       # Array operations - stable
+scikit-learn==1.6.1                # Cosine similarity - minimal surface area
+
+# ─── FastAPI Web Framework ─────────────────────────────────
+fastapi==0.111.0                   # Web framework - pinned for API stability
+uvicorn==0.29.0                    # ASGI server - compatible with FastAPI
+pydantic==2.8.1                    # Data validation - required by FastAPI
+
+# ─── Environment & Configuration ───────────────────────────
+python-dotenv==1.0.0               # Environment variables - minimal, stable
+
+# ─── Core Python Dependencies ──────────────────────────────
+# (These are pulled in automatically but pinned for stability)
+certifi==2023.7.22                 # SSL certificates
+charset-normalizer==3.4.2          # Character encoding
+click==8.1.8                       # CLI utilities (uvicorn dependency)
+h11==0.16.0                        # HTTP/1.1 implementation
+httptools==0.6.4                   # HTTP parsing (uvicorn)
+idna==3.10                          # Internationalized domain names
+joblib==1.5.0                      # Parallel processing (scikit-learn)
+packaging==24.2                    # Package version parsing
+regex==2024.11.6                   # Regular expressions (transformers)
+requests==2.31.0                   # HTTP client library
+safetensors==0.5.3                 # Safe tensor serialization
+scipy==1.15.3                      # Scientific computing (scikit-learn)
+starlette==0.37.2                  # ASGI framework (FastAPI dependency)
+threadpoolctl==3.6.0               # Thread pool control (scikit-learn)
+tokenizers==0.21.2                 # Fast tokenization (transformers)
+tqdm==4.67.1                       # Progress bars
+typing_extensions==4.13.2          # Extended type hints
+urllib3==2.4.0                     # HTTP client
+watchfiles==1.1.0                  # File watching (uvicorn --reload)

@@ -38,7 +38,6 @@ from typing import List, Optional, Dict, Any, Tuple
 CACHE_DIR = "/tmp/cache"
 os.makedirs(CACHE_DIR, exist_ok=True)
 os.environ["HF_HOME"] = CACHE_DIR
-os.environ["TRANSFORMERS_CACHE"] = CACHE_DIR
 
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer

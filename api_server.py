@@ -18,7 +18,6 @@ sys.path.insert(0, str(api_dir.absolute()))
 CACHE_DIR = "/tmp/cache"
 os.makedirs(CACHE_DIR, exist_ok=True)
 os.environ["HF_HOME"] = CACHE_DIR
-os.environ["TRANSFORMERS_CACHE"] = CACHE_DIR
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware

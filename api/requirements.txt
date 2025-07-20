@@ -1,15 +1,22 @@
-# ─── Core ML & Embedding libs ─────────────────────────
-sentence-transformers>=2.2.2,<3.0     # stable version with compatible deps
-transformers>=4.21.0,<5.0              # compatible with sentence-transformers
-huggingface-hub>=0.15.0,<1.0           # compatible hub version
-scikit-learn>=1.3.0                    # for cosine similarity
-numpy>=1.24.0                          # for array operations
-torch>=2.1.0                           # required by sentence-transformers 2.7+
+# ================================================================
+# MadCourses - Production Requirements
+# ================================================================
+# For maximum stability, use: pip install -r requirements_stable.txt
+# This file allows minor updates while maintaining compatibility
+# ================================================================
 
-# ─── Database & environment ─────────────────────────────
-python-dotenv>=1.0               # loads .env at startup
+# ─── Core ML & Embedding Libraries ─────────────────────────
+sentence-transformers==2.7.0           # Pinned for stability
+transformers>=4.53.0,<4.54.0           # Compatible patch versions only
+huggingface-hub>=0.33.0,<0.34.0        # Compatible minor versions
+torch>=2.7.0,<2.8.0                    # Major version pinned
+scikit-learn>=1.6.0,<1.7.0             # Minor version range
+numpy>=2.2.0,<2.3.0                    # Compatible versions
 
-# ─── FastAPI server stack ─────────────────────────────
-fastapi==0.111.0
-uvicorn[standard]==0.29.0
-pydantic>=2.7,<3.0
+# ─── FastAPI Web Framework ─────────────────────────────────
+fastapi==0.111.0                       # Exact version for API stability
+uvicorn[standard]==0.29.0              # Exact version for server stability
+pydantic>=2.8.0,<2.9.0                 # Compatible minor versions
+
+# ─── Environment & Configuration ───────────────────────────
+python-dotenv>=1.0.0,<2.0.0            # Stable environment loading

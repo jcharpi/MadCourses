@@ -94,8 +94,10 @@
 	// Active skill selection
 	const activeSkill = writable<string>('');
 
-	// API results storage
+	// API results storage and loading state
 	const results = writable<Array<{ skill: string; matches: Course[] }>>([]);
+	const isLoading = writable(false);
+	const loadingState = writable<'idle' | 'caching' | 'searching'>('idle');
 
 	// Derived active skill courses
 	const coursesForActiveSkill = derived([results, activeSkill], ([$results, $activeSkill]) => {
@@ -124,11 +126,18 @@
 		}
 	}
 
+	// Track if this is the first search (for caching vs searching states)
+	let hasSearchedBefore = false;
+
 	// Search execution
 	async function search() {
 		// Prepare API payload
 		const currentSkills = get(skills).filter((s) => s.trim());
 		if (currentSkills.length === 0) return;
+
+		// Set loading state - caching only on first search, searching afterwards
+		isLoading.set(true);
+		loadingState.set(hasSearchedBefore ? 'searching' : 'caching');
 
 		const f = get(filters);
 		const payload: Record<string, unknown> = {
@@ -165,8 +174,15 @@
 			if (!get(activeSkill) && currentSkills.length) {
 				activeSkill.set(currentSkills[0]);
 			}
+
+			// Mark that we've completed the first search
+			hasSearchedBefore = true;
 		} catch (err) {
 			console.error('Fetch failed:', err);
+		} finally {
+			// Reset loading state
+			isLoading.set(false);
+			loadingState.set('idle');
 		}
 	}
 </script>
@@ -175,8 +191,11 @@
 <header
 	class="w-full bg-red-700 text-white px-6 py-4 shadow-md flex items-center justify-between select-none"
 >
-	<!-- App title -->
-	<h1 class="text-2xl font-semibold tracking-wide">MadCourses</h1>
+	<!-- App title with semester info -->
+	<div class="flex items-baseline gap-3">
+		<h1 class="text-2xl font-semibold tracking-wide">MadCourses</h1>
+		<span class="text-sm text-red-200 font-medium">Fall 25-26 Courses</span>
+	</div>
 
 	<!-- About + click‑toggle tooltip -->
 	<div class="relative inline-block ml-4" bind:this={aboutWrapper}>
@@ -364,8 +383,8 @@
 				>
 					<option value="" selected>Any</option>
 					<option value="F24">F24</option>
-					<option value="S24">S24</option>
-					<option value="U24">U24</option>
+					<option value="S25">S25</option>
+					<option value="U25">U25</option>
 				</select>
 			</div>
 
@@ -385,9 +404,20 @@
 
 			<!-- Search trigger -->
 			<button
-				class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-3 rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-red-600 mt-4"
-				on:click={search}>Search</button
+				class="w-full {$isLoading ? 'bg-red-700' : 'bg-red-600 hover:bg-red-700'} text-white font-semibold px-4 py-3 rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-red-600 mt-4 flex items-center justify-center gap-2"
+				on:click={search}
+				disabled={$isLoading}
 			>
+				{#if $isLoading}
+					<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+						<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+					</svg>
+					{$loadingState === 'caching' ? 'Caching...' : 'Searching...'}
+				{:else}
+					Search
+				{/if}
+			</button>
 		</div>
 	</section>
 
