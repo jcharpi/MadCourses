@@ -19,3 +19,20 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Development config files (IDE/tooling)
+.prettierrc
+.prettierignore
+.npmrc
+pyproject.toml
+eslint-config-prettier.d.ts
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE
+.vscode/
+.idea/

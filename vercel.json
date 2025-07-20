@@ -1,0 +1,19 @@
+{
+	"functions": {
+		"api/match.py": {
+			"runtime": "python3.9",
+			"maxDuration": 30
+		}
+	},
+	"rewrites": [
+		{
+			"source": "/api/(.*)",
+			"destination": "/api/$1"
+		}
+	],
+	"env": {
+		"MODEL": "all-MiniLM-L12-v2",
+		"TOP_K": "5",
+		"DB_PATH": "api/courses.db"
+	}
+}

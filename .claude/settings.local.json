@@ -5,7 +5,18 @@
       "Bash(pip install:*)",
       "Bash(python:*)",
       "Bash(rm:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(npm run check:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run format:*)",
+      "Bash(ls:*)",
+      "Bash(npm run dev:*)",
+      "Bash(timeout 10s npm run dev)",
+      "Bash(curl:*)",
+      "Bash(find:*)",
+      "Bash(true)"
     ],
     "deny": []
   }
