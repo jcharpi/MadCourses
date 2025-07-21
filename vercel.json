@@ -1,7 +1,14 @@
 {
 	"functions": {
 		"api/match.py": {
-			"maxDuration": 30
+			"maxDuration": 30,
+			"memory": 1024
+		}
+	},
+	"build": {
+		"env": {
+			"PYTHONDONTWRITEBYTECODE": "1",
+			"PIP_NO_CACHE_DIR": "1"
 		}
 	},
 	"rewrites": [

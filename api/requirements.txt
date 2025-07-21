@@ -6,8 +6,8 @@
 
 # ─── Core ML Libraries (minimal) ───────────────────────────────
 sentence-transformers==2.7.0
-transformers==4.53.2
-torch==2.7.1
+transformers[sentencepiece]==4.53.2
+torch==2.7.1+cpu --find-links https://download.pytorch.org/whl/torch_stable.html
 scikit-learn==1.6.1
 numpy==2.2.6
 huggingface-hub==0.33.4
