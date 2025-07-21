@@ -18,6 +18,6 @@
 	"env": {
 		"MODEL": "all-MiniLM-L12-v2",
 		"TOP_K": "5",
-		"DB_PATH": "api/courses.db"
+		"DB_PATH": "api/python/courses.db"
 	}
 }
