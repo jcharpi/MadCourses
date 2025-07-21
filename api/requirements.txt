@@ -1,24 +1,28 @@
 # ================================================================
-# MadCourses - Vercel-Optimized Requirements
+# MadCourses - HuggingFace API Only (No PyTorch)
 # ================================================================
-# Minimal dependencies to fit within Vercel's 250MB function limit
+# Uses HuggingFace Inference API instead of local models
+# Total size: ~60MB (vs 250MB+ with PyTorch)
 # ================================================================
 
-# ─── Core ML Libraries (minimal) ───────────────────────────────
-sentence-transformers==2.7.0
-transformers==4.53.2
-torch==2.7.1
-scikit-learn==1.6.1
-numpy==2.2.6
-huggingface-hub==0.33.4
+# ─── Core Dependencies (minimal) ───────────────────────────────
+numpy==2.2.6                    # Array operations (~20MB)
+scikit-learn==1.6.1             # Cosine similarity only (~30MB)
+requests==2.31.0                # HTTP client for HF API (~1MB)
 
-# ─── Web Framework (serverless-optimized) ──────────────────────
-fastapi==0.111.0
-pydantic==2.8.1
+# ─── Web Framework (serverless) ────────────────────────────────
+fastapi==0.111.0                # API framework (~5MB)
+pydantic==2.8.1                 # Data validation (~3MB)
 
-# ─── Essential Only ────────────────────────────────────────────
-python-dotenv==1.0.0
-requests==2.31.0
-safetensors==0.5.3
-tokenizers==0.21.2
-tqdm==4.67.1
+# ─── Utilities ─────────────────────────────────────────────────
+python-dotenv==1.0.0            # Environment variables (~1MB)
+
+# ─── Essential System Dependencies ─────────────────────────────
+certifi==2023.7.22              # SSL certificates
+charset-normalizer==3.4.2       # Character encoding
+idna==3.10                       # Internationalized domains
+urllib3==2.4.0                   # HTTP client backend
+joblib==1.5.0                    # Parallel processing (scikit-learn)
+scipy==1.15.3                   # Scientific computing (scikit-learn)
+threadpoolctl==3.6.0             # Thread control (scikit-learn)
+packaging==24.2                  # Version parsing
