@@ -1,22 +1,24 @@
 # ================================================================
-# MadCourses - Production Requirements
+# MadCourses - Vercel-Optimized Requirements
 # ================================================================
-# For maximum stability, use: pip install -r requirements_stable.txt
-# This file allows minor updates while maintaining compatibility
+# Minimal dependencies to fit within Vercel's 250MB function limit
 # ================================================================
 
-# ─── Core ML & Embedding Libraries ─────────────────────────
-sentence-transformers==2.7.0           # Pinned for stability
-transformers>=4.53.0,<4.54.0           # Compatible patch versions only
-huggingface-hub>=0.33.0,<0.34.0        # Compatible minor versions
-torch>=2.7.0,<2.8.0                    # Major version pinned
-scikit-learn>=1.6.0,<1.7.0             # Minor version range
-numpy>=2.2.0,<2.3.0                    # Compatible versions
+# ─── Core ML Libraries (minimal) ───────────────────────────────
+sentence-transformers==2.7.0
+transformers==4.53.2
+torch==2.7.1
+scikit-learn==1.6.1
+numpy==2.2.6
+huggingface-hub==0.33.4
 
-# ─── FastAPI Web Framework ─────────────────────────────────
-fastapi==0.111.0                       # Exact version for API stability
-uvicorn[standard]==0.29.0              # Exact version for server stability
-pydantic>=2.8.0,<2.9.0                 # Compatible minor versions
+# ─── Web Framework (serverless-optimized) ──────────────────────
+fastapi==0.111.0
+pydantic==2.8.1
 
-# ─── Environment & Configuration ───────────────────────────
-python-dotenv>=1.0.0,<2.0.0            # Stable environment loading
+# ─── Essential Only ────────────────────────────────────────────
+python-dotenv==1.0.0
+requests==2.31.0
+safetensors==0.5.3
+tokenizers==0.21.2
+tqdm==4.67.1
