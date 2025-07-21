@@ -3,6 +3,10 @@
 		"api/match.py": {
 			"maxDuration": 30,
 			"memory": 1024
+		},
+		"api/health.py": {
+			"maxDuration": 10,
+			"memory": 512
 		}
 	},
 	"build": {
