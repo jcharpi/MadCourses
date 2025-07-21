@@ -3,9 +3,11 @@ import type { RequestHandler } from '@sveltejs/kit';
 export const POST: RequestHandler = async (event) => {
 	const body = await event.request.json();
 
-	// In development, proxy to local Python API server
-	// In production, Vercel will route /api/match directly to our Python function
-	const BACKEND_URL = 'http://localhost:8001/match';
+	// Determine backend URL based on environment
+	const isDev = process.env.NODE_ENV === 'development';
+	const BACKEND_URL = isDev
+		? 'http://localhost:8001/match'
+		: `${event.url.origin}/api/match`;
 
 	try {
 		const res = await fetch(BACKEND_URL, {
@@ -24,7 +26,9 @@ export const POST: RequestHandler = async (event) => {
 		console.error('Failed to connect to Python API server:', error);
 		return new Response(
 			JSON.stringify({
-				error: 'Python API server not running. Please start it with: python api_server.py'
+				error: isDev
+					? 'Python API server not running. Please start it with: python api_server.py'
+					: 'Internal server error'
 			}),
 			{
 				status: 503,
