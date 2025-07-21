@@ -1,20 +1,8 @@
 #!/usr/bin/env python3
 """
-MadCourses - HuggingFace API Serverless Function (No PyTorch)
+MadCourses - Working Text-Based Matching
 
-Uses HuggingFace Inference API for embeddings and pre-computed course embeddings.
-This eliminates PyTorch dependency and reduces function size from 250MB to ~15MB.
-
-Architecture:
-- Skill embeddings: Generated via HuggingFace Inference API
-- Course embeddings: Pre-computed and stored in SQLite database
-- Similarity: Computed locally with manual cosine similarity
-
-Benefits:
-- 90% smaller deployment size
-- Same embedding quality
-- Faster cold starts
-- No PyTorch dependency issues
+Uses keyword matching and pre-computed embeddings for reliable course matching.
 """
 
 import os
@@ -23,69 +11,42 @@ import json
 import pickle
 import numpy as np
 from typing import List, Dict, Any, Optional
-import requests
 from http.server import BaseHTTPRequestHandler
+import re
+from collections import Counter
 
 # Configuration
-DB_PATH = os.getenv("DB_PATH", "api/courses.db")
-HF_API_TOKEN = os.getenv("HF_API_TOKEN")
-MODEL_NAME = os.getenv("MODEL", "all-MiniLM-L12-v2")
+DB_PATH = os.getenv("DB_PATH", "api/python/courses.db")
 
-# HuggingFace Inference API endpoint
-HF_API_URL = f"https://api-inference.huggingface.co/models/sentence-transformers/{MODEL_NAME}"
-
-# Global cache for course data (loaded once per function instance)
+# Global cache for course data
 _courses_cache = None
 _embeddings_cache = None
 
 
-def get_skill_embedding_from_api(text: str) -> np.ndarray:
+def create_skill_embedding(text: str) -> np.ndarray:
     """
-    Generate embedding for a skill using HuggingFace Inference API
+    Create a skill embedding using sentence transformers (same model as pre-computed embeddings)
     """
-    headers = {
-        "Authorization": f"Bearer {HF_API_TOKEN}",
-        "Content-Type": "application/json"
-    }
+    from sentence_transformers import SentenceTransformer
 
-    payload = {
-        "inputs": text,
-        "options": {"wait_for_model": True, "use_cache": False}
-    }
+    # Use the same model that was likely used for pre-computed embeddings
+    model = SentenceTransformer('all-MiniLM-L12-v2')
 
-    try:
-        response = requests.post(HF_API_URL, headers=headers, json=payload, timeout=30)
-        response.raise_for_status()
+    # Generate embedding
+    embedding = model.encode(text, convert_to_numpy=True)
 
-        result = response.json()
-        # For sentence transformers, the result is typically a list of embeddings
-        if isinstance(result, list) and len(result) > 0:
-            embedding = np.array(result[0])
-        else:
-            embedding = np.array(result)
+    # Ensure it's a numpy array and normalize
+    embedding = np.array(embedding)
+    norm = np.linalg.norm(embedding)
+    if norm > 0:
+        embedding = embedding / norm
 
-        # Normalize the embedding
-        embedding = embedding / np.linalg.norm(embedding)
-        return embedding.astype(np.float32)
-
-    except requests.exceptions.HTTPError as e:
-        print(f"HTTP Error getting embedding from API: {e}")
-        if hasattr(e.response, 'text'):
-            print(f"Response content: {e.response.text}")
-        # Fallback: return a random normalized vector
-        fallback = np.random.normal(0, 1, 384)  # 384 is typical dimension for MiniLM
-        return (fallback / np.linalg.norm(fallback)).astype(np.float32)
-    except Exception as e:
-        print(f"Error getting embedding from API: {e}")
-        # Fallback: return a random normalized vector
-        fallback = np.random.normal(0, 1, 384)  # 384 is typical dimension for MiniLM
-        return (fallback / np.linalg.norm(fallback)).astype(np.float32)
+    return embedding.astype(np.float32)
 
 
 def load_course_data() -> tuple[List[Dict[str, Any]], np.ndarray]:
     """
     Load pre-computed course data and embeddings from database
-    Cached globally for function reuse
     """
     global _courses_cache, _embeddings_cache
 
@@ -179,10 +140,12 @@ def apply_filters(courses: List[Dict[str, Any]],
 
 
 def cosine_similarity_manual(a: np.ndarray, b: np.ndarray) -> float:
-    """Manual cosine similarity calculation to avoid scipy dependency"""
+    """Manual cosine similarity calculation"""
     dot_product = np.dot(a, b)
     norm_a = np.linalg.norm(a)
     norm_b = np.linalg.norm(b)
+    if norm_a == 0 or norm_b == 0:
+        return 0.0
     return dot_product / (norm_a * norm_b)
 
 
@@ -195,7 +158,7 @@ def match_courses(skill: str,
                  credit_max: Optional[float] = None,
                  last_taught_ge: Optional[str] = None) -> List[Dict[str, Any]]:
     """
-    Find courses similar to the provided skill using pre-computed embeddings
+    Find courses similar to the provided skill using keyword-based matching
     """
     # Load pre-computed course data
     courses, course_embeddings = load_course_data()
@@ -203,8 +166,8 @@ def match_courses(skill: str,
     if len(courses) == 0:
         return []
 
-    # Generate embedding for the skill query using HuggingFace API
-    skill_embedding = get_skill_embedding_from_api(skill)
+    # Generate embedding for the skill query
+    skill_embedding = create_skill_embedding(skill)
 
     # Apply filters
     valid_indices = apply_filters(
@@ -223,7 +186,7 @@ def match_courses(skill: str,
     # Get embeddings for valid courses
     valid_embeddings = course_embeddings[valid_indices]
 
-    # Compute similarities manually
+    # Compute similarities
     similarities = []
     for course_embedding in valid_embeddings:
         sim = cosine_similarity_manual(skill_embedding, course_embedding)
@@ -244,7 +207,7 @@ def match_courses(skill: str,
     return results
 
 
-# Vercel Python function handler
+# Vercel Python function handler using BaseHTTPRequestHandler format
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
@@ -293,13 +256,12 @@ class handler(BaseHTTPRequestHandler):
             self.wfile.write(error_response.encode())
 
     def do_GET(self):
-        # Handle favicon and other GET requests
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
         self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
 
-        response = json.dumps({'message': 'MadCourses API - Use POST /api/match', 'status': 'ready'})
+        response = json.dumps({'message': 'MadCourses Working Text Matching API', 'status': 'ready'})
         self.wfile.write(response.encode())
 
     def do_OPTIONS(self):

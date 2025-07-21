@@ -1,10 +1,8 @@
 # ================================================================
-# MadCourses - Ultra Minimal for Vercel (No scipy/scikit-learn)
+# MadCourses - RAG with Sentence Transformers for Vercel
 # ================================================================
-# Uses HuggingFace Inference API + manual cosine similarity
-# Total size: ~15MB (vs 250MB+ with PyTorch)
+# Uses sentence-transformers for proper RAG embeddings
 # ================================================================
 
-# ─── Essential Only ────────────────────────────────────────────
-numpy==2.2.6                    # Array operations (~8MB)
-requests==2.31.0                # HTTP client for HF API (~1MB)
+numpy==2.2.6                    # Array operations
+sentence-transformers==2.7.0    # For RAG embeddings
