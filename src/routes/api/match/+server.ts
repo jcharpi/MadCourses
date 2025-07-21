@@ -3,11 +3,8 @@ import type { RequestHandler } from '@sveltejs/kit';
 export const POST: RequestHandler = async (event) => {
 	const body = await event.request.json();
 
-	// Determine backend URL based on environment
-	const isDev = process.env.NODE_ENV === 'development';
-	const BACKEND_URL = isDev
-		? 'http://localhost:8001/match'
-		: `${event.url.origin}/api/python/match`;
+	// Point to local development server
+	const BACKEND_URL = 'http://localhost:8000/api/match';
 
 	try {
 		const res = await fetch(BACKEND_URL, {
@@ -20,15 +17,16 @@ export const POST: RequestHandler = async (event) => {
 		const text = await res.text();
 		return new Response(text, {
 			status: res.status,
-			headers: { 'Content-Type': res.headers.get('Content-Type') || 'application/json' }
+			headers: { 
+				'Content-Type': res.headers.get('Content-Type') || 'application/json',
+				'Access-Control-Allow-Origin': '*'
+			}
 		});
 	} catch (error) {
 		console.error('Failed to connect to Python API server:', error);
 		return new Response(
 			JSON.stringify({
-				error: isDev
-					? 'Python API server not running. Please start it with: python api_server.py'
-					: 'Internal server error'
+				error: 'Python API server not running. Please start it with: venv/Scripts/activate && python local_server.py'
 			}),
 			{
 				status: 503,

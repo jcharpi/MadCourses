@@ -1,255 +1,111 @@
 # MadCourses - UW-Madison Course Search
 
-**Semantic course search with SvelteKit frontend + Python API backend, deployed as a unified Vercel project.**
+**Semantic course search with SvelteKit frontend + Python RAG backend using PyTorch and sentence-transformers.**
 
 ## 🚀 Quick Start
 
 ```bash
-# Local development
-python start_unified.py
+# 1. Set up Python environment
+python -m venv venv
+venv\Scripts\activate
+pip install -r api\python\requirements.txt
 
-# Deploy to Vercel
-vercel deploy
+# 2. Start Python RAG server
+python local_server.py
+
+# 3. Start frontend (in new terminal)
+npm run dev
 ```
+
+Open http://localhost:5173 to use the app!
 
 ## 📁 Project Structure
 
 ```
-MadCourses/                         # Root project (deploy this to Vercel)
-├── src/                            # SvelteKit frontend
-│   ├── routes/+page.svelte        # Main search interface
-│   └── routes/api/match/+server.ts # Development API proxy
-├── api/                           # Python serverless functions
-│   ├── match.py                   # Main API endpoint (/api/match)
-│   ├── skill_matcher_sqlite.py    # Search engine with vector similarity
-│   ├── database_setup.py          # Database utilities
-│   ├── requirements.txt           # Python dependencies
-│   └── courses.db                 # SQLite database with course data
-├── static/                        # Static assets
-├── package.json                   # Frontend dependencies
-├── vercel.json                    # Vercel deployment configuration
-├── start_unified.py               # Local development server
-└── test_unified.py                # Comprehensive test suite
+MadCourses/
+├── src/                           # SvelteKit frontend
+│   ├── routes/+page.svelte       # Main search interface
+│   └── routes/api/match/+server.ts # API proxy to Python server
+├── api/python/                    # Python RAG implementation
+│   ├── match.py                  # Core RAG with sentence-transformers
+│   ├── requirements.txt          # PyTorch + sentence-transformers
+│   └── courses.db               # SQLite with 10,005 courses + embeddings
+├── local_server.py               # Local Python API server
+├── test_rag_local.py            # Test RAG functionality
+├── test_api_client.py           # Test API client
+├── venv/                        # Python virtual environment
+└── package.json                 # Frontend dependencies
 ```
 
-## 🔧 Local Development
-
-### Setup
-
-```bash
-# Check dependencies and setup database
-python start_unified.py --setup
-
-# Or check dependencies only
-python start_unified.py --deps-only
-```
-
-### Development Server
-
-```bash
-# Option 1: Simple NPM command (recommended)
-npm run dev
-
-# Option 2: Use Python script (may have Windows issues)
-python start_unified.py
-
-# Option 3: Windows batch file
-start_dev.bat
-
-# Server URL: http://localhost:5173 (or next available port)
-# API URL: http://localhost:5173/api/match
-```
-
-### Testing
-
-```bash
-# Run comprehensive test suite
-python test_unified.py
-
-# Check code formatting
-npm run check
-npm run lint
-```
-
-## 🌐 Deployment
-
-### Vercel Deployment
-
-```bash
-# Deploy to Vercel (first time)
-vercel
-
-# Redeploy
-vercel deploy
-
-# Production deployment
-vercel --prod
-```
-
-### What Gets Deployed
-
-- **Frontend**: SvelteKit app with search interface
-- **API**: Python serverless functions for course matching
-- **Database**: SQLite database with 10,000+ courses and embeddings
-- **Static Assets**: Fonts, favicon, etc.
-
-## 🔍 How It Works
+## 🔧 How It Works
 
 ### Request Flow
-
 ```
-User Search → SvelteKit Frontend → /api/match → Python Function → SQLite Database
-```
-
-### Key Features
-
-- **Semantic Search**: Uses SentenceTransformer embeddings for intelligent course matching
-- **Advanced Filtering**: Subject, level, credits, semester with proper range handling
-- **Credit Range Logic**: Courses with "1-6" credits match searches for 1, 3, or 6 credits
-- **Fast Performance**: In-memory vector search with global caching
-- **Single Deployment**: Frontend and backend in one Vercel project
-
-## 📊 Database
-
-### Current Data
-
-- **10,005 courses** with full metadata
-- **10,005 embeddings** for semantic search
-- **1,558 subjects** across all departments
-- **Levels**: 100-999 (undergraduate through PhD)
-- **Semesters**: Historical data from 1989 to present
-
-### Import New Data
-
-```bash
-python -c "
-import sys; sys.path.append('api')
-from database_setup import import_csv_to_database, generate_and_store_embeddings
-import_csv_to_database('new_courses.csv')
-generate_and_store_embeddings()
-"
-```
-
-## 🧪 API Reference
-
-### POST /api/match
-
-**Request:**
-
-```json
-{
-	"skills": ["machine learning", "data analysis"],
-	"k": 5,
-	"subject_contains": "COMP SCI",
-	"level_min": 300,
-	"level_max": 599,
-	"credit_min": 3,
-	"credit_max": 4,
-	"last_taught": "F24"
-}
-```
-
-**Response:**
-
-```json
-{
-	"results": [
-		{
-			"skill": "machine learning",
-			"matches": [
-				{
-					"id": 123,
-					"subject": "COMP SCI",
-					"level": 540,
-					"title": "Introduction to Machine Learning",
-					"credit_amount": "3",
-					"similarity": 0.89
-				}
-			]
-		}
-	]
-}
-```
-
-## 🛠️ Architecture
-
-### Development Mode
-
-```
-Browser → SvelteKit Dev Server (5173) → Python API → SQLite Database
-```
-
-### Production Mode
-
-```
-Browser → Vercel Edge Network → SvelteKit + Python API → SQLite Database
+User → SvelteKit Frontend → Python RAG Server → sentence-transformers → SQLite Database
 ```
 
 ### Technology Stack
+- **Frontend**: SvelteKit + TypeScript + Tailwind CSS
+- **Backend**: Python + PyTorch + sentence-transformers 2.7.0
+- **RAG**: Local embeddings with pre-computed course vectors
+- **Database**: SQLite with 10,005 courses and 384D embeddings
+- **Model**: all-MiniLM-L12-v2 (384 dimensions)
 
-- **Frontend**: SvelteKit, TypeScript, Tailwind CSS, Skeleton UI
-- **Backend**: Python, FastAPI, SQLite, SentenceTransformers
-- **Deployment**: Vercel with serverless functions
-- **Search**: Vector similarity with cosine distance
+## 🧪 Testing
 
-## 🐛 Troubleshooting
-
-### Common Issues
-
-| Issue                        | Solution                                      |
-| ---------------------------- | --------------------------------------------- |
-| Dependencies missing         | Run `python start_unified.py --setup`         |
-| Port 5173 in use             | Stop other dev servers or change port         |
-| Database not found           | Run database setup with `--setup` flag        |
-| Import errors in VS Code     | Restart VS Code (should auto-configure)       |
-| API timeout on first request | Normal - model loading takes 10-20s initially |
-
-### Debug Commands
-
+### Test RAG Functions
 ```bash
-# Test API directly
-curl -X POST http://localhost:5173/api/match \
-  -H "Content-Type: application/json" \
-  -d '{"skills": ["programming"], "k": 2}'
-
-# Check database
-python -c "
-import sys; sys.path.append('api')
-from database_setup import get_database_stats
-get_database_stats()
-"
+venv\Scripts\activate
+python test_rag_local.py
 ```
 
-## 📚 Documentation
+### Test API Server
+```bash
+# Terminal 1: Start server
+venv\Scripts\activate
+python local_server.py
 
-- **API Documentation**: Built-in at `/docs` when running locally
-- **Database Schema**: See `api/database_setup.py`
+# Terminal 2: Test client
+venv\Scripts\activate
+python test_api_client.py
+```
 
-## 🎯 Key Improvements
+### Test Full Stack
+```bash
+# Terminal 1: Python server
+venv\Scripts\activate
+python local_server.py
 
-### From Previous Version
+# Terminal 2: Frontend
+npm run dev
+```
 
-- ✅ **Credit Range Fix**: Proper overlap detection instead of averaging
-- ✅ **Unified Deployment**: Single Vercel project instead of separate frontend/backend
-- ✅ **Performance**: Global caching and in-memory vector search
-- ✅ **Error Handling**: Comprehensive validation and user-friendly messages
-- ✅ **Documentation**: Complete guides and API reference
+## 🔍 RAG Performance
 
-### Architecture Benefits
+- **10,005 courses** with semantic embeddings
+- **First search**: Shows "Caching..." (model loads ~10s)
+- **Subsequent searches**: Show "Searching..." (~1s)
+- **High similarity scores**: 0.74+ for exact matches
 
-- **Zero CORS Issues**: Same origin for frontend and API
-- **Cost Effective**: Single Vercel project, no external database costs
-- **Easy Debugging**: Everything in one repository
-- **Scalable**: Vercel handles traffic scaling automatically
+## 🛠️ Development
 
-## 🎉 Success Metrics
+### Core Files
+- `api/python/match.py` - RAG implementation with sentence-transformers
+- `local_server.py` - HTTP server for local development  
+- `src/routes/+page.svelte` - Search interface with filters
+- `src/routes/api/match/+server.ts` - Proxy to Python server
 
-- ✅ **All tests passing**: Database, API, Frontend, Vercel config
-- ✅ **Clean structure**: Root directory ready for Vercel deployment
-- ✅ **No import errors**: Proper Python path configuration
-- ✅ **Credit logic working**: Range overlap detection implemented
-- ✅ **Performance optimized**: Sub-second search responses after warmup
+### Key Features
+- **Semantic Search**: Uses sentence-transformers for intelligent matching
+- **Advanced Filtering**: Subject, level, credits, semester
+- **Local Development**: No external APIs required
+- **Smart Caching**: Model loads once, stays in memory
 
-**Ready for production deployment! 🚀**
+## 📊 Database
 
-Run `vercel deploy` from this directory to deploy to production.
+- **10,005 courses** with full metadata
+- **10,005 embeddings** (384D vectors)
+- **Pre-computed**: Ready for instant similarity search
+- **Subjects**: All UW-Madison departments
+
+Ready for local development with PyTorch and sentence-transformers! 🚀

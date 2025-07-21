@@ -36,3 +36,10 @@ __pycache__/
 # IDE
 .vscode/
 .idea/
+
+# Virtual environments
+venv/
+env/
+
+# Test files
+test_*.py
