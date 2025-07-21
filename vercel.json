@@ -20,7 +20,6 @@
 	"env": {
 		"MODEL": "all-MiniLM-L12-v2",
 		"TOP_K": "5",
-		"DB_PATH": "api/courses.db",
-		"HF_API_TOKEN": "@hf_api_token"
+		"DB_PATH": "api/courses.db"
 	}
 }
