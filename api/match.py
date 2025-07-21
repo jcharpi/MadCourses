@@ -24,7 +24,6 @@ import pickle
 import numpy as np
 from typing import List, Dict, Any, Optional
 import requests
-from sklearn.metrics.pairwise import cosine_similarity
 
 # Configuration
 DB_PATH = os.getenv("DB_PATH", "api/courses.db")
@@ -178,6 +177,14 @@ def apply_filters(courses: List[Dict[str, Any]],
     return np.array(valid_indices)
 
 
+def cosine_similarity_manual(a: np.ndarray, b: np.ndarray) -> float:
+    """Manual cosine similarity calculation to avoid scipy dependency"""
+    dot_product = np.dot(a, b)
+    norm_a = np.linalg.norm(a)
+    norm_b = np.linalg.norm(b)
+    return dot_product / (norm_a * norm_b)
+
+
 def match_courses(skill: str,
                  k: int = 5,
                  subject_contains: Optional[str] = None,
@@ -215,9 +222,12 @@ def match_courses(skill: str,
     # Get embeddings for valid courses
     valid_embeddings = course_embeddings[valid_indices]
 
-    # Compute similarities
-    query_vector = skill_embedding.reshape(1, -1)
-    similarities = cosine_similarity(query_vector, valid_embeddings)[0]
+    # Compute similarities manually
+    similarities = []
+    for course_embedding in valid_embeddings:
+        sim = cosine_similarity_manual(skill_embedding, course_embedding)
+        similarities.append(sim)
+    similarities = np.array(similarities)
 
     # Get top-k results
     top_k_indices = np.argsort(similarities)[::-1][:k]
