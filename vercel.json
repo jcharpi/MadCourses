@@ -1,6 +1,6 @@
 {
 	"functions": {
-		"api/match.py": {
+		"api/python/match.py": {
 			"maxDuration": 30,
 			"memory": 1024
 		},

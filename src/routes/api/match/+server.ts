@@ -7,7 +7,7 @@ export const POST: RequestHandler = async (event) => {
 	const isDev = process.env.NODE_ENV === 'development';
 	const BACKEND_URL = isDev
 		? 'http://localhost:8001/match'
-		: `${event.url.origin}/api/match`;
+		: `${event.url.origin}/api/python/match`;
 
 	try {
 		const res = await fetch(BACKEND_URL, {
