@@ -6,11 +6,19 @@ Local test server for MadCourses RAG API
 import sys
 import json
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import urllib.parse
+# Add the API directory to path for imports
+import os
+api_path = os.path.join(os.path.dirname(__file__), 'api', 'python')
+if api_path not in sys.path:
+    sys.path.insert(0, api_path)
 
-# Add the API directory to path
-sys.path.append('api/python')
-from match import match_courses
+# Import after path setup
+try:
+    from match import match_courses  # type: ignore
+except ImportError as e:
+    print(f"Error importing match module: {e}")
+    print(f"Make sure api/python/match.py exists and is accessible")
+    sys.exit(1)
 
 class LocalAPIHandler(BaseHTTPRequestHandler):
     def do_POST(self):
