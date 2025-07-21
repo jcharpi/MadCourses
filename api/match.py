@@ -316,5 +316,22 @@ def handler(request):
 
 
 # For Vercel, the function should be exported as the default
+def handler_vercel(request):
+    """Vercel-specific handler wrapper"""
+    try:
+        print(f"Vercel request method: {getattr(request, 'method', 'unknown')}")
+        print(f"Request object type: {type(request)}")
+        return handler(request)
+    except Exception as e:
+        print(f"Vercel handler error: {e}")
+        import traceback
+        traceback.print_exc()
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps({'error': f'Handler error: {str(e)}'})
+        }
+
+# Export as default for Vercel
 def main(request):
-    return handler(request)
+    return handler_vercel(request)
