@@ -4,17 +4,14 @@ Simple health check function for Vercel debugging
 """
 
 import json
+from http.server import BaseHTTPRequestHandler
 
-def handler(request):
-    """Simple health check"""
-    return {
-        'statusCode': 200,
-        'headers': {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
-        },
-        'body': json.dumps({'status': 'ok', 'message': 'Health check passed'})
-    }
+class handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
 
-def main(request):
-    return handler(request)
+        response = json.dumps({'status': 'ok', 'message': 'Health check passed'})
+        self.wfile.write(response.encode())

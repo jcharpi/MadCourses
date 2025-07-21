@@ -3,15 +3,15 @@
 MadCourses - HuggingFace API Serverless Function (No PyTorch)
 
 Uses HuggingFace Inference API for embeddings and pre-computed course embeddings.
-This eliminates PyTorch dependency and reduces function size from 250MB to ~60MB.
+This eliminates PyTorch dependency and reduces function size from 250MB to ~15MB.
 
 Architecture:
 - Skill embeddings: Generated via HuggingFace Inference API
 - Course embeddings: Pre-computed and stored in SQLite database
-- Similarity: Computed locally with scikit-learn
+- Similarity: Computed locally with manual cosine similarity
 
 Benefits:
-- 80% smaller deployment size
+- 90% smaller deployment size
 - Same embedding quality
 - Faster cold starts
 - No PyTorch dependency issues
@@ -24,6 +24,7 @@ import pickle
 import numpy as np
 from typing import List, Dict, Any, Optional
 import requests
+from http.server import BaseHTTPRequestHandler
 
 # Configuration
 DB_PATH = os.getenv("DB_PATH", "api/courses.db")
@@ -243,95 +244,57 @@ def match_courses(skill: str,
     return results
 
 
-def handler(request):
-    """
-    Vercel serverless function handler
-    """
-    # Handle CORS preflight
-    if getattr(request, 'method', None) == 'OPTIONS':
-        return {
-            'statusCode': 200,
-            'headers': {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type',
+# Vercel Python function handler
+class handler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        content_length = int(self.headers['Content-Length'])
+        post_data = self.rfile.read(content_length)
+
+        try:
+            data = json.loads(post_data.decode('utf-8'))
+
+            skills = data.get('skills', [])
+            k = data.get('k', 5)
+
+            # Extract filters
+            filters = {
+                'subject_contains': data.get('subject_contains'),
+                'level_min': data.get('level_min'),
+                'level_max': data.get('level_max'),
+                'credit_min': data.get('credit_min'),
+                'credit_max': data.get('credit_max'),
+                'last_taught_ge': data.get('last_taught')
             }
-        }
 
-    if getattr(request, 'method', None) != 'POST':
-        return {
-            'statusCode': 405,
-            'headers': {'Content-Type': 'application/json'},
-            'body': json.dumps({'error': 'Method not allowed'})
-        }
+            # Process each skill
+            results = []
+            for skill in skills:
+                matches = match_courses(skill, k=k, **filters)
+                results.append({
+                    'skill': skill,
+                    'matches': matches
+                })
 
-    try:
-        # Parse request body
-        body = getattr(request, 'body', '{}')
-        if hasattr(request, 'json'):
-            data = request.json
-        else:
-            if isinstance(body, bytes):
-                body = body.decode('utf-8')
-            data = json.loads(body)
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
 
-        skills = data.get('skills', [])
-        k = data.get('k', 5)
+            response = json.dumps({'results': results})
+            self.wfile.write(response.encode())
 
-        # Extract filters
-        filters = {
-            'subject_contains': data.get('subject_contains'),
-            'level_min': data.get('level_min'),
-            'level_max': data.get('level_max'),
-            'credit_min': data.get('credit_min'),
-            'credit_max': data.get('credit_max'),
-            'last_taught_ge': data.get('last_taught')
-        }
+        except Exception as e:
+            print(f"Error processing request: {e}")
+            self.send_response(500)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
 
-        # Process each skill
-        results = []
-        for skill in skills:
-            matches = match_courses(skill, k=k, **filters)
-            results.append({
-                'skill': skill,
-                'matches': matches
-            })
+            error_response = json.dumps({'error': str(e)})
+            self.wfile.write(error_response.encode())
 
-        return {
-            'statusCode': 200,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
-            'body': json.dumps({'results': results})
-        }
-
-    except Exception as e:
-        print(f"Error processing request: {e}")
-        return {
-            'statusCode': 500,
-            'headers': {'Content-Type': 'application/json'},
-            'body': json.dumps({'error': str(e)})
-        }
-
-
-# For Vercel, the function should be exported as the default
-def handler_vercel(request):
-    """Vercel-specific handler wrapper"""
-    try:
-        print(f"Vercel request method: {getattr(request, 'method', 'unknown')}")
-        print(f"Request object type: {type(request)}")
-        return handler(request)
-    except Exception as e:
-        print(f"Vercel handler error: {e}")
-        import traceback
-        traceback.print_exc()
-        return {
-            'statusCode': 500,
-            'headers': {'Content-Type': 'application/json'},
-            'body': json.dumps({'error': f'Handler error: {str(e)}'})
-        }
-
-# Export as default for Vercel
-def main(request):
-    return handler_vercel(request)
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.end_headers()
