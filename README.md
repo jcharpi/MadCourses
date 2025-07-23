@@ -1,23 +1,23 @@
 # MadCourses - UW-Madison Course Search
 
-**Semantic course search with SvelteKit frontend + Python RAG backend using PyTorch and sentence-transformers.**
+**Semantic course search with SvelteKit frontend using Hugging Face API and Vercel Blob Storage.**
 
 ## 🚀 Quick Start
 
 ```bash
-# 1. Set up Python environment
-python -m venv venv
-venv\Scripts\activate
-pip install -r api\python\requirements.txt
+# Install dependencies
+npm install
 
-# 2. Start Python RAG server
-python local_server.py
+# Set up environment variables
+# Create .env.local with:
+# HUGGINGFACE_API_KEY=your_key_here
+# BLOB_READ_WRITE_TOKEN=your_token_here
 
-# 3. Start frontend (in new terminal)
+# Start development server
 npm run dev
 ```
 
-Open http://localhost:5173 to use the app!
+Open http://localhost:8000 to use the app!
 
 ## 📁 Project Structure
 
@@ -25,87 +25,81 @@ Open http://localhost:5173 to use the app!
 MadCourses/
 ├── src/                           # SvelteKit frontend
 │   ├── routes/+page.svelte       # Main search interface
-│   └── routes/api/match/+server.ts # API proxy to Python server
-├── api/python/                    # Python RAG implementation
-│   ├── match.py                  # Core RAG with sentence-transformers
-│   ├── requirements.txt          # PyTorch + sentence-transformers
-│   └── courses.db               # SQLite with 10,005 courses + embeddings
-├── local_server.py               # Local Python API server
-├── test_rag_local.py            # Test RAG functionality
-├── test_api_client.py           # Test API client
-├── venv/                        # Python virtual environment
-└── package.json                 # Frontend dependencies
+│   ├── routes/api/match/+server.ts # Course matching API endpoint
+│   └── lib/database.ts           # Vercel Blob data loading
+├── scripts/                       # Build and utility scripts
+│   ├── dev-server.ts             # Development server with graceful shutdown
+│   └── upload-to-blob.ts         # Course data upload to Vercel Blob
+├── static/                        # Static assets
+├── courses.json                   # Course data for upload
+└── package.json                  # Dependencies and scripts
 ```
 
 ## 🔧 How It Works
 
 ### Request Flow
+
 ```
-User → SvelteKit Frontend → Python RAG Server → sentence-transformers → SQLite Database
+User → SvelteKit Frontend → Hugging Face API → Vercel Blob Storage
 ```
 
 ### Technology Stack
-- **Frontend**: SvelteKit + TypeScript + Tailwind CSS
-- **Backend**: Python + PyTorch + sentence-transformers 2.7.0
-- **RAG**: Local embeddings with pre-computed course vectors
-- **Database**: SQLite with 10,005 courses and 384D embeddings
+
+- **Frontend**: SvelteKit + TypeScript + Tailwind CSS + Skeleton UI
+- **API**: Hugging Face Inference API (sentence-transformers)
+- **RAG**: Real-time embeddings with similarity search
+- **Storage**: Vercel Blob for course data and embeddings
 - **Model**: all-MiniLM-L12-v2 (384 dimensions)
+- **Deployment**: Vercel with @sveltejs/adapter-vercel
 
-## 🧪 Testing
+## 🧪 Development
 
-### Test RAG Functions
+### Available Scripts
+
 ```bash
-venv\Scripts\activate
-python test_rag_local.py
-```
-
-### Test API Server
-```bash
-# Terminal 1: Start server
-venv\Scripts\activate
-python local_server.py
-
-# Terminal 2: Test client
-venv\Scripts\activate
-python test_api_client.py
-```
-
-### Test Full Stack
-```bash
-# Terminal 1: Python server
-venv\Scripts\activate
-python local_server.py
-
-# Terminal 2: Frontend
+# Development server (port 8000)
 npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+
+# Type checking
+npm run check
+
+# Linting and formatting
+npm run lint
+npm run format
+
+# Upload course data to Vercel Blob
+npm run upload-blob
 ```
 
-## 🔍 RAG Performance
+## 🔍 Features
 
-- **10,005 courses** with semantic embeddings
-- **First search**: Shows "Caching..." (model loads ~10s)
-- **Subsequent searches**: Show "Searching..." (~1s)
-- **High similarity scores**: 0.74+ for exact matches
+- **Semantic Search**: Uses Hugging Face sentence-transformers for intelligent matching
+- **Advanced Filtering**: Subject, level, credits, semester, results count
+- **Real-time Search**: API calls to Hugging Face for embeddings
+- **Cloud Storage**: Course data stored in Vercel Blob
+- **Responsive Design**: Mobile-friendly interface with Tailwind CSS
 
-## 🛠️ Development
+## 🛠️ Core Files
 
-### Core Files
-- `api/python/match.py` - RAG implementation with sentence-transformers
-- `local_server.py` - HTTP server for local development  
-- `src/routes/+page.svelte` - Search interface with filters
-- `src/routes/api/match/+server.ts` - Proxy to Python server
+- `src/routes/+page.svelte` - Main search interface with filters and results
+- `src/routes/api/match/+server.ts` - Course matching API endpoint
+- `src/lib/database.ts` - Vercel Blob data loading utilities
+- `scripts/dev-server.ts` - Development server with graceful shutdown
+- `scripts/upload-to-blob.ts` - Data upload utility
 
-### Key Features
-- **Semantic Search**: Uses sentence-transformers for intelligent matching
-- **Advanced Filtering**: Subject, level, credits, semester
-- **Local Development**: No external APIs required
-- **Smart Caching**: Model loads once, stays in memory
+## 📊 Data
 
-## 📊 Database
+- **10,005+ courses** from UW-Madison
+- **Course metadata**: Subject, level, title, credits, last taught
+- **Pre-computed embeddings**: 384D vectors stored in Vercel Blob
+- **All subjects**: Complete UW-Madison course catalog
 
-- **10,005 courses** with full metadata
-- **10,005 embeddings** (384D vectors)
-- **Pre-computed**: Ready for instant similarity search
-- **Subjects**: All UW-Madison departments
+## 🚀 Deployment
 
-Ready for local development with PyTorch and sentence-transformers! 🚀
+Ready for deployment on Vercel with serverless functions and Blob storage!
