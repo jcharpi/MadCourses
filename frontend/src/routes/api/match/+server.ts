@@ -3,8 +3,8 @@ import type { RequestHandler } from '@sveltejs/kit';
 export const POST: RequestHandler = async (event) => {
 	const body = await event.request.json();
 
-	// Point to local development server
-	const BACKEND_URL = 'http://localhost:8000/api/match';
+	// Use environment variable for backend URL
+	const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000/api/match';
 
 	try {
 		const res = await fetch(BACKEND_URL, {
@@ -26,7 +26,7 @@ export const POST: RequestHandler = async (event) => {
 		console.error('Failed to connect to Python API server:', error);
 		return new Response(
 			JSON.stringify({
-				error: 'Python API server not running. Please start it with: venv/Scripts/activate && python local_server.py'
+				error: 'Backend API server not running. Please start it with: cd backend && python server.py'
 			}),
 			{
 				status: 503,

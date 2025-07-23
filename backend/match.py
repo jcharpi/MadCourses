@@ -23,7 +23,7 @@ from http.server import BaseHTTPRequestHandler
 # CONFIGURATION & GLOBAL CACHE
 # ============================================================================
 
-DB_PATH = os.getenv("DB_PATH", "api/python/courses.db")
+DB_PATH = os.getenv("DB_PATH", "courses.db")
 
 # Global caches for performance
 _courses_cache = None      # Course metadata cache

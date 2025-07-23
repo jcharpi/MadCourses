@@ -88,7 +88,11 @@
 			lastTaught: '',
 			k: '3'
 		});
-		search();
+		// Only search if we have skills
+		const currentSkills = get(skills).filter((s) => s.trim());
+		if (currentSkills.length > 0) {
+			search();
+		}
 	}
 
 	// Active skill selection
