@@ -1,8 +1,8 @@
 # ================================================================
-# MadCourses - RAG with Sentence Transformers for Vercel
+# MadCourses - RAG with Hugging Face API
 # ================================================================
-# Uses sentence-transformers for proper RAG embeddings
+# Uses Hugging Face Inference API for embeddings
 # ================================================================
 
-numpy==2.2.6                    # Array operations
-sentence-transformers==2.7.0    # For RAG embeddings
+requests==2.31.0               # HTTP requests for Hugging Face API
+python-dotenv==1.0.0          # Load .env files for local development

@@ -90,5 +90,15 @@ class APIHandler(BaseHTTPRequestHandler):
 if __name__ == '__main__':
     logger.info(f"Starting server on port {PORT}")
     server = HTTPServer(('0.0.0.0', PORT), APIHandler)
+    server.allow_reuse_address = True  # Allow port reuse
     logger.info("Server started successfully!")
-    server.serve_forever()
+
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        logger.info("Server shutdown requested via Ctrl+C")
+    finally:
+        logger.info("Shutting down server...")
+        server.shutdown()
+        server.server_close()
+        logger.info("Server stopped cleanly")

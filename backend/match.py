@@ -15,72 +15,103 @@ import os
 import sqlite3
 import json
 import pickle
-import numpy as np
+import requests
 from typing import List, Dict, Any, Optional
 from http.server import BaseHTTPRequestHandler
+
+# Load environment variables from .env file for local development
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # dotenv not available, skip (fine for production)
+    pass
 
 # ============================================================================
 # CONFIGURATION & GLOBAL CACHE
 # ============================================================================
 
 DB_PATH = os.getenv("DB_PATH", "courses.db")
+HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
+HUGGINGFACE_API_URL = "https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L12-v2/pipeline/feature-extraction"
 
 # Global caches for performance
 _courses_cache = None      # Course metadata cache
 _embeddings_cache = None   # Pre-computed embeddings cache
-_model_cache = None        # SentenceTransformer model cache
 
 
 # ============================================================================
-# MODEL & EMBEDDING FUNCTIONS
+# HUGGING FACE API FUNCTIONS
 # ============================================================================
 
-def get_model():
+def create_skill_embedding(text: str) -> List[float]:
     """
-    Get or create cached SentenceTransformer model.
-    Only loads once per server instance for optimal performance.
+    Create a skill embedding using Hugging Face API
     """
-    global _model_cache
-    if _model_cache is None:
-        from sentence_transformers import SentenceTransformer
-        print("Loading SentenceTransformer model (first time only)...")
-        _model_cache = SentenceTransformer('all-MiniLM-L12-v2')
-        print("Model loaded and cached!")
-    return _model_cache
+    headers = {"Authorization": f"Bearer {HUGGINGFACE_API_KEY}"}
+    payload = {"inputs": [text]}
+
+    response = requests.post(
+        HUGGINGFACE_API_URL,
+        headers=headers,
+        json=payload,
+        allow_redirects=True
+    )
 
 
-def create_skill_embedding(text: str) -> np.ndarray:
+    if response.status_code != 200:
+        raise Exception(f"Hugging Face API error: {response.status_code} - {response.text}")
+
+    embeddings = response.json()
+    embedding = embeddings[0]  # Get first embedding from array
+
+    # Normalize the embedding
+    import math
+    norm = math.sqrt(sum(x*x for x in embedding))
+    if norm > 0:
+        embedding = [x/norm for x in embedding]
+
+    return embedding
+
+
+def create_skill_embeddings_batch(texts: List[str]) -> List[List[float]]:
     """
-    Create a skill embedding using cached sentence transformer model
-    """
-    model = get_model()
-
-    # Generate embedding
-    embedding = model.encode(text, convert_to_numpy=True, normalize_embeddings=True)
-
-    return embedding.astype(np.float32)
-
-
-def create_skill_embeddings_batch(texts: List[str]) -> np.ndarray:
-    """
-    Create embeddings for multiple skills at once (more efficient)
+    Create embeddings for multiple skills at once using Hugging Face API
     """
     if not texts:
-        return np.array([])
+        return []
 
-    model = get_model()
+    headers = {"Authorization": f"Bearer {HUGGINGFACE_API_KEY}"}
 
-    # Generate embeddings in batch - much faster than individual calls
-    embeddings = model.encode(texts, convert_to_numpy=True, normalize_embeddings=True)
+    response = requests.post(
+        HUGGINGFACE_API_URL,
+        headers=headers,
+        json={"inputs": texts},
+        allow_redirects=True
+    )
 
-    return embeddings.astype(np.float32)
+    if response.status_code != 200:
+        raise Exception(f"Hugging Face API error: {response.status_code} - {response.text}")
+
+    embeddings = response.json()
+
+    # Normalize all embeddings
+    normalized_embeddings = []
+    for embedding in embeddings:
+        import math
+        norm = math.sqrt(sum(x*x for x in embedding))
+        if norm > 0:
+            embedding = [x/norm for x in embedding]
+        normalized_embeddings.append(embedding)
+
+    return normalized_embeddings
 
 
 # ============================================================================
 # DATA LOADING FUNCTIONS
 # ============================================================================
 
-def load_course_data() -> tuple[List[Dict[str, Any]], np.ndarray]:
+def load_course_data() -> tuple[List[Dict[str, Any]], List[List[float]]]:
     """
     Load all course data and embeddings from database.
     Uses global cache for subsequent calls.
@@ -106,7 +137,7 @@ def load_course_data() -> tuple[List[Dict[str, Any]], np.ndarray]:
     conn.close()
 
     if not rows:
-        return [], np.array([])
+        return [], []
 
     courses = []
     embeddings = []
@@ -114,8 +145,9 @@ def load_course_data() -> tuple[List[Dict[str, Any]], np.ndarray]:
     for row in rows:
         course_id, subject, level, title, credit_amount, credit_min, credit_max, last_taught, description, embedding_bytes = row
 
-        # Deserialize the pre-computed embedding and ensure float32
-        embedding = pickle.loads(embedding_bytes).astype(np.float32)
+        # Deserialize the pre-computed embedding and convert to list
+        embedding_array = pickle.loads(embedding_bytes)
+        embedding = embedding_array.tolist()
 
         # Store course metadata
         course_data = {
@@ -134,7 +166,7 @@ def load_course_data() -> tuple[List[Dict[str, Any]], np.ndarray]:
         embeddings.append(embedding)
 
     _courses_cache = courses
-    _embeddings_cache = np.array(embeddings, dtype=np.float32)
+    _embeddings_cache = embeddings
 
     print(f"Loaded {len(_courses_cache)} courses with pre-computed embeddings")
     return _courses_cache, _embeddings_cache
@@ -145,7 +177,7 @@ def load_filtered_course_data(subject_contains: Optional[str] = None,
                               level_max: Optional[int] = None,
                               credit_min: Optional[float] = None,
                               credit_max: Optional[float] = None,
-                              last_taught_ge: Optional[str] = None) -> tuple[List[Dict[str, Any]], np.ndarray]:
+                              last_taught_ge: Optional[str] = None) -> tuple[List[Dict[str, Any]], List[List[float]]]:
     """
     Load filtered course data directly from SQL for optimal performance.
     Much faster than loading all data and filtering in Python.
@@ -201,7 +233,7 @@ def load_filtered_course_data(subject_contains: Optional[str] = None,
     conn.close()
 
     if not rows:
-        return [], np.array([])
+        return [], []
 
     courses = []
     embeddings = []
@@ -209,8 +241,9 @@ def load_filtered_course_data(subject_contains: Optional[str] = None,
     for row in rows:
         course_id, subject, level, title, credit_amount, credit_min, credit_max, last_taught, description, embedding_bytes = row
 
-        # Deserialize the pre-computed embedding and ensure float32
-        embedding = pickle.loads(embedding_bytes).astype(np.float32)
+        # Deserialize the pre-computed embedding and convert to list
+        embedding_array = pickle.loads(embedding_bytes)
+        embedding = embedding_array.tolist()
 
         # Store course metadata
         course_data = {
@@ -228,7 +261,7 @@ def load_filtered_course_data(subject_contains: Optional[str] = None,
         courses.append(course_data)
         embeddings.append(embedding)
 
-    return courses, np.array(embeddings, dtype=np.float32)
+    return courses, embeddings
 
 
 # ============================================================================
@@ -236,26 +269,25 @@ def load_filtered_course_data(subject_contains: Optional[str] = None,
 # ============================================================================
 
 
-def cosine_similarity_vectorized(query_embedding: np.ndarray, embeddings: np.ndarray) -> np.ndarray:
+def cosine_similarity_vectorized(query_embedding: List[float], embeddings: List[List[float]]) -> List[float]:
     """
     Vectorized cosine similarity computation
     Args:
-        query_embedding: Shape (embedding_dim,)
-        embeddings: Shape (n_courses, embedding_dim)
+        query_embedding: List of floats (embedding_dim,)
+        embeddings: List of lists (n_courses, embedding_dim)
     Returns:
-        similarities: Shape (n_courses,)
+        similarities: List of floats (n_courses,)
     """
-    # Normalize query embedding
-    query_norm = np.linalg.norm(query_embedding)
-    if query_norm > 0:
-        query_embedding = query_embedding / query_norm
+    import math
 
-    # Normalize course embeddings
-    embedding_norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
-    normalized_embeddings = embeddings / np.where(embedding_norms > 0, embedding_norms, 1)
+    similarities = []
 
-    # Single matrix operation instead of loops - 100x faster!
-    similarities = np.dot(normalized_embeddings, query_embedding)
+    # Query embedding is already normalized from API
+    for course_embedding in embeddings:
+        # Course embeddings are already normalized from database
+        # Compute dot product (cosine similarity for normalized vectors)
+        similarity = sum(a * b for a, b in zip(query_embedding, course_embedding))
+        similarities.append(similarity)
 
     return similarities
 
@@ -302,7 +334,9 @@ def match_courses(skill: str,
     similarities = cosine_similarity_vectorized(skill_embedding, course_embeddings)
 
     # Get top-k results
-    top_k_indices = np.argsort(similarities)[::-1][:k]
+    indexed_similarities = [(i, sim) for i, sim in enumerate(similarities)]
+    indexed_similarities.sort(key=lambda x: x[1], reverse=True)
+    top_k_indices = [idx for idx, _ in indexed_similarities[:k]]
 
     # Build results
     results = []
@@ -360,11 +394,13 @@ def match_courses_batch(skills: List[str],
     for i, skill in enumerate(skills):
         skill_embedding = skill_embeddings[i]
 
-        # Compute similarities (vectorized)
+        # Compute similarities
         similarities = cosine_similarity_vectorized(skill_embedding, course_embeddings)
 
         # Get top-k results
-        top_k_indices = np.argsort(similarities)[::-1][:k]
+        indexed_similarities = [(j, sim) for j, sim in enumerate(similarities)]
+        indexed_similarities.sort(key=lambda x: x[1], reverse=True)
+        top_k_indices = [idx for idx, _ in indexed_similarities[:k]]
 
         # Build results
         matches = []
