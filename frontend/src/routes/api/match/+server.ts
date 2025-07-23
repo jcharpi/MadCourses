@@ -17,7 +17,7 @@ export const POST: RequestHandler = async (event) => {
 		const text = await res.text();
 		return new Response(text, {
 			status: res.status,
-			headers: { 
+			headers: {
 				'Content-Type': res.headers.get('Content-Type') || 'application/json',
 				'Access-Control-Allow-Origin': '*'
 			}
