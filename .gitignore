@@ -62,3 +62,7 @@ frontend/node_modules/
 # Windows specific
 nul
 *.tmp
+
+# Large database files (use Vercel Blob Storage instead)
+courses.json
+backend/courses.db

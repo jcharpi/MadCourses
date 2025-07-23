@@ -3,33 +3,30 @@ import type { RequestHandler } from '@sveltejs/kit';
 export const POST: RequestHandler = async (event) => {
 	const body = await event.request.json();
 
-	// Use environment variable for backend URL
-	const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000/api/match';
-
 	try {
-		const res = await fetch(BACKEND_URL, {
+		// Use the new internal search API instead of external backend
+		const response = await fetch(`${event.url.origin}/api/search`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(body)
 		});
 
-		// Relay the response exactly
-		const text = await res.text();
-		return new Response(text, {
-			status: res.status,
+		const result = await response.text();
+		return new Response(result, {
+			status: response.status,
 			headers: {
-				'Content-Type': res.headers.get('Content-Type') || 'application/json',
+				'Content-Type': response.headers.get('Content-Type') || 'application/json',
 				'Access-Control-Allow-Origin': '*'
 			}
 		});
 	} catch (error) {
-		console.error('Failed to connect to Python API server:', error);
+		console.error('Search API error:', error);
 		return new Response(
 			JSON.stringify({
-				error: 'Backend API server not running. Please start it with: cd backend && python server.py'
+				error: error instanceof Error ? error.message : 'Search service unavailable'
 			}),
 			{
-				status: 503,
+				status: 500,
 				headers: { 'Content-Type': 'application/json' }
 			}
 		);
