@@ -1,4 +1,5 @@
 import { head } from '@vercel/blob';
+import { env } from '$env/dynamic/private';
 
 export interface Course {
 	id: number;
@@ -34,7 +35,9 @@ export async function loadCourseData(filters?: {
 
 	try {
 		// Try to load from Vercel Blob Storage
-		const blobInfo = await head('courses.json');
+		const blobInfo = await head('courses.json', {
+			token: env.BLOB_READ_WRITE_TOKEN
+		});
 		if (blobInfo) {
 			const response = await fetch(blobInfo.downloadUrl);
 			const coursesData = (await response.json()) as CourseWithEmbedding[];

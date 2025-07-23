@@ -9,7 +9,7 @@
 npm install
 
 # Set up environment variables
-# Create .env.local with:
+# Create .env with:
 # HUGGINGFACE_API_KEY=your_key_here
 # BLOB_READ_WRITE_TOKEN=your_token_here
 

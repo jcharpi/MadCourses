@@ -6,7 +6,7 @@ import { put } from '@vercel/blob';
 import { config } from 'dotenv';
 
 // Load environment variables
-config({ path: '.env.local' });
+config({ path: '.env' });
 
 interface CourseWithEmbedding {
 	id: number;
@@ -28,8 +28,8 @@ async function uploadCourseDataToBlob(): Promise<void> {
 		// Check if token is available
 		const token = process.env.BLOB_READ_WRITE_TOKEN;
 		if (!token) {
-			console.error('❌ BLOB_READ_WRITE_TOKEN not found in .env.local');
-			console.log('Please add your Vercel Blob Storage token to .env.local:');
+			console.error('❌ BLOB_READ_WRITE_TOKEN not found in .env');
+			console.log('Please add your Vercel Blob Storage token to .env:');
 			console.log('BLOB_READ_WRITE_TOKEN=your_token_here');
 			process.exit(1);
 		}
