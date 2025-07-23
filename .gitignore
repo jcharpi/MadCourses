@@ -3,8 +3,9 @@ node_modules
 # Output
 .output
 .vercel
-/.svelte-kit
+frontend/.svelte-kit
 /build
+dist/
 
 # OS
 .DS_Store
@@ -36,3 +37,28 @@ __pycache__/
 # IDE
 .vscode/
 .idea/
+
+# Virtual environments
+venv/
+env/
+
+# Test files
+test_*.py
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Frontend dependencies (in case there are multiple)
+frontend/node_modules/
+
+# Cache directories
+.cache/
+.temp/
+.tmp/
+
+# Windows specific
+nul
+*.tmp

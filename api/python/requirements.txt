@@ -1,8 +1,0 @@
-# ================================================================
-# MadCourses - RAG with Sentence Transformers for Vercel
-# ================================================================
-# Uses sentence-transformers for proper RAG embeddings
-# ================================================================
-
-numpy==2.2.6                    # Array operations
-sentence-transformers==2.7.0    # For RAG embeddings
