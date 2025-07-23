@@ -1,8 +1,0 @@
-# ================================================================
-# MadCourses - RAG with Hugging Face API
-# ================================================================
-# Uses Hugging Face Inference API for embeddings
-# ================================================================
-
-requests==2.31.0               # HTTP requests for Hugging Face API
-python-dotenv==1.0.0          # Load .env files for local development
